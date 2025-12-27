@@ -1,24 +1,185 @@
+import asyncio
+import aiohttp
+from bs4 import BeautifulSoup
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
 
-@register("helloworld", "YourName", "一个简单的 Hello World 插件", "1.0.0")
-class MyPlugin(Star):
+# 反爬请求头（适配鸿蒙应用商城）
+REQUEST_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Referer": "https://appgallery.huawei.com/",
+    "Accept-Language": "zh-CN,zh;q=0.9",
+    "Cache-Control": "no-cache"
+}
+
+@register(
+    "harmony_app_monitor",  # 插件唯一ID
+    "YourName",             # 作者名
+    "鸿蒙应用更新监控插件",  # 插件描述
+    "1.0.0"                 # 版本号
+)
+class HarmonyAppMonitorPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
+        # 从Context读取插件配置（AstralBot面板配置的参数）
+        self.config = context.config
+        self.target_url = self.config.get("target_url", "")  # 应用URL
+        self.check_interval = self.config.get("check_interval", 10)  # 检查间隔（分钟）
+        self.history_version = self.config.get("history_version", "")  # 历史版本
+        
+        # 异步请求会话（适配异步插件）
+        self.session: aiohttp.ClientSession | None = None
+        # 定时任务对象（用于停止插件时销毁）
+        self.check_task: asyncio.Task | None = None
 
     async def initialize(self):
-        """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
+        """插件初始化（异步）：创建请求会话+启动定时检查任务"""
+        logger.info("[鸿蒙应用监控插件] 初始化插件...")
+        # 创建异步HTTP会话
+        self.session = aiohttp.ClientSession(headers=REQUEST_HEADERS)
+        
+        # 初始化历史版本（首次运行）
+        if self.target_url:
+            init_info = await self._get_app_info()
+            if init_info:
+                self.history_version = init_info["version"]
+                # 保存配置到AstralBot面板
+                await self.context.update_config({"history_version": self.history_version})
+                logger.info(f"[鸿蒙应用监控插件] 初始化历史版本：{self.history_version}")
+        
+        # 启动定时检查任务（间隔：check_interval 分钟）
+        if self.target_url and self.check_interval > 0:
+            self.check_task = asyncio.create_task(self._scheduled_check())
+            logger.info(f"[鸿蒙应用监控插件] 定时检查任务启动，间隔：{self.check_interval}分钟")
+        else:
+            logger.warning("[鸿蒙应用监控插件] 未配置应用URL或间隔，跳过定时任务")
 
-    # 注册指令的装饰器。指令名为 helloworld。注册成功后，发送 `/helloworld` 就会触发这个指令，并回复 `你好, {user_name}!`
-    @filter.command("helloworld")
-    async def helloworld(self, event: AstrMessageEvent):
-        """这是一个 hello world 指令""" # 这是 handler 的描述，将会被解析方便用户了解插件内容。建议填写。
-        user_name = event.get_sender_name()
-        message_str = event.message_str # 用户发的纯文本消息字符串
-        message_chain = event.get_messages() # 用户所发的消息的消息链 # from astrbot.api.message_components import *
-        logger.info(message_chain)
-        yield event.plain_result(f"Hello, {user_name}, 你发了 {message_str}!") # 发送一条纯文本消息
+    async def _get_app_info(self) -> dict | None:
+        """异步抓取鸿蒙应用商城应用信息"""
+        if not self.target_url or not self.session:
+            logger.error("[鸿蒙应用监控插件] URL或会话未初始化，抓取失败")
+            return None
+        
+        try:
+            async with self.session.get(
+                url=self.target_url,
+                timeout=aiohttp.ClientTimeout(total=15),
+                verify_ssl=True
+            ) as resp:
+                resp.raise_for_status()  # 抛出HTTP错误
+                html = await resp.text(encoding="utf-8")
+                soup = BeautifulSoup(html, "html.parser")
+
+                # 解析应用信息（适配鸿蒙应用商城页面结构）
+                app_name = soup.select_one("h1.app-name")?.text.strip() or "未知应用"
+                current_version = soup.select_one("div.version")?.text.strip() or "未知版本"
+                update_time = soup.select_one("span.update-date")?.text.strip() or "未知时间"
+                update_log = soup.select_one("div.update-content")?.text.strip() or "无更新内容"
+
+                logger.info(f"[鸿蒙应用监控插件] 抓取成功：{app_name} | {current_version}")
+                return {
+                    "name": app_name,
+                    "version": current_version,
+                    "time": update_time,
+                    "log": update_log
+                }
+        except Exception as e:
+            logger.error(f"[鸿蒙应用监控插件] 抓取失败：{str(e)}", exc_info=True)
+            return None
+
+    async def _send_notice(self, info: dict):
+        """异步推送更新通知到机器人（适配多平台）"""
+        notice_msg = f"""【鸿蒙应用更新提醒】
+📱 应用名称：{info['name']}
+🔢 最新版本：{info['version']}
+🕒 更新时间：{info['time']}
+📝 更新内容：{info['log']}"""
+        
+        try:
+            # 通过Context的bot实例发送消息（AstralBot官方API）
+            # 适配多平台（企业微信/QQ/钉钉），默认推送到插件绑定的聊天对象
+            await self.context.bot.send_message(
+                content=notice_msg,
+                message_type="text"
+            )
+            logger.info("[鸿蒙应用监控插件] 通知推送成功")
+        except Exception as e:
+            logger.error(f"[鸿蒙应用监控插件] 推送失败：{str(e)}", exc_info=True)
+
+    async def _scheduled_check(self):
+        """定时检查更新的核心逻辑（异步循环）"""
+        while True:
+            if not self.target_url:
+                await asyncio.sleep(self.check_interval * 60)
+                continue
+            
+            # 抓取应用信息
+            app_info = await self._get_app_info()
+            if not app_info:
+                await asyncio.sleep(self.check_interval * 60)
+                continue
+            
+            # 版本对比：有更新则推送
+            if app_info["version"] != self.history_version:
+                logger.info(f"[鸿蒙应用监控插件] 检测到更新：{self.history_version} → {app_info['version']}")
+                await self._send_notice(app_info)
+                # 更新历史版本并保存配置
+                self.history_version = app_info["version"]
+                await self.context.update_config({"history_version": self.history_version})
+            else:
+                logger.info("[鸿蒙应用监控插件] 无版本更新，跳过推送")
+            
+            # 等待指定间隔（分钟转秒）
+            await asyncio.sleep(self.check_interval * 60)
+
+    # 注册手动触发指令：发送 /hmcheck 可手动检查更新
+    @filter.command("hmcheck")
+    async def manual_check(self, event: AstrMessageEvent):
+        """手动触发检查鸿蒙应用更新（指令：/hmcheck）"""
+        logger.info(f"[鸿蒙应用监控插件] 收到手动检查指令（用户：{event.get_sender_name()}）")
+        
+        # 未配置URL时回复提示
+        if not self.target_url:
+            yield event.plain_result("❌ 未配置鸿蒙应用URL，请先在插件面板填写！")
+            return
+        
+        # 手动抓取并检查
+        app_info = await self._get_app_info()
+        if not app_info:
+            yield event.plain_result("❌ 抓取应用信息失败，请检查URL或网络！")
+            return
+        
+        # 构造回复消息
+        if app_info["version"] != self.history_version:
+            reply_msg = f"""✅ 检测到应用更新！
+📱 应用名称：{app_info['name']}
+🔢 当前版本：{self.history_version} → 最新版本：{app_info['version']}
+🕒 更新时间：{app_info['time']}
+📝 更新内容：{app_info['log']}"""
+            # 推送通知并更新历史版本
+            await self._send_notice(app_info)
+            self.history_version = app_info["version"]
+            await self.context.update_config({"history_version": self.history_version})
+        else:
+            reply_msg = f"""✅ 暂无更新！
+📱 应用名称：{app_info['name']}
+🔢 当前版本：{app_info['version']}
+🕒 最后更新时间：{app_info['time']}"""
+        
+        yield event.plain_result(reply_msg)
 
     async def terminate(self):
-        """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
+        """插件销毁（异步）：停止定时任务+关闭会话"""
+        logger.info("[鸿蒙应用监控插件] 销毁插件...")
+        # 停止定时任务
+        if self.check_task and not self.check_task.done():
+            self.check_task.cancel()
+            try:
+                await self.check_task
+            except asyncio.CancelledError:
+                logger.info("[鸿蒙应用监控插件] 定时任务已停止")
+        # 关闭异步会话
+        if self.session and not self.session.closed:
+            await self.session.close()
+            logger.info("[鸿蒙应用监控插件] HTTP会话已关闭")
