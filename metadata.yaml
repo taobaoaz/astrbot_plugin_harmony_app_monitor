@@ -1,51 +1,36 @@
 name: harmony-update-notifier
-version: 1.0.0
-description: 鸿蒙应用更新实时推送插件
+version: '1.0.0'
+description: 通过抓取华为应用市场页面，监控指定鸿蒙应用更新并推送通知的插件。
 author: YourName
 license: MIT
 
-# 依赖配置
+# 插件依赖的Python库，AstrBot会在加载插件时检查
 dependencies:
-  - flask>=2.0.0
+  - playwright>=1.40.0
+  - beautifulsoup4>=4.12.0
+  - requests>=2.31.0
+  - apscheduler>=3.10.0
 
-# 插件配置（用户可在AstrBot后台修改）
+# 用户可配置项 (重点部分)
 config:
-  # Webhook服务器配置
-  webhook_host:
-    type: string
-    default: "0.0.0.0"
-    description: "Webhook服务器监听地址"
-  
-  webhook_port:
+  apps_to_watch:
+    type: list
+    default:
+      - app_name: "一记账单"
+        detail_url: "https://appgallery.huawei.com/app/detail?id=com.ericple.onebill"
+        version_selector: "span.content-value"
+        # selector_type: "css" # 默认为CSS选择器，可省略
+    description: |
+      需要监控的应用列表。请严格按照YAML格式添加：
+        - app_name: “应用名称”
+          detail_url: “华为应用市场详情页完整链接”
+          version_selector: “用于定位版本号的CSS选择器”
+
+  check_interval_minutes:
     type: integer
-    default: 5000
-    description: "Webhook服务器端口"
-  
-  webhook_secret:
-    type: string
-    default: ""
-    description: "Webhook签名密钥（用于验证请求）"
-  
-  # 推送目标配置
-  target_group_id:
-    type: string
-    default: ""
-    description: "目标QQ群号（留空则推送到所有空间）"
-  
-  target_user_id:
-    type: string
-    default: ""
-    description: "目标用户QQ号（优先于群号）"
+    default: 30
+    description: 定时检查更新的时间间隔（分钟）。为避免被封禁，建议不低于30分钟。
 
-# 插件事件
-events:
-  - type: message
-    handlers:
-      - on_message
-
-# 指令
-commands:
-  - name: harmony-check
-    description: 手动检查更新
-    handlers:
-      - on_check_command
+# 插件事件与命令（可按需扩展）
+events: []
+commands: []
