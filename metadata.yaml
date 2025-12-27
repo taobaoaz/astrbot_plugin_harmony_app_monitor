@@ -7,6 +7,6 @@ desc: 监控鸿蒙应用商城指定应用版本更新，支持自动推送+手�
 # 版本号（严格遵循 vX.X.X 格式）
 version: v1.0.0
 # 作者名（替换为你的名称）
-author: YourName
+author: xianyao
 # 插件仓库地址（无则留空，或填写你的仓库链接）
 repo: https://github.com/taobaoaz/astrbot_plugin_harmony_app_monitor
