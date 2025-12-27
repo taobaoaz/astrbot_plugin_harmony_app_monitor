@@ -14,10 +14,10 @@ REQUEST_HEADERS = {
 }
 
 @register(
-    "harmony_app_monitor",  # 插件唯一ID
-    "YourName",             # 作者名
+    "astrbot_plugin_harmony_app_monitor",  # 与metadata.yaml的name一致
+    "xianyao",             # 作者名
     "鸿蒙应用更新监控插件",  # 插件描述
-    "1.0.0"                 # 版本号
+    "v1.0.0"                # 版本号（与metadata.yaml一致）
 )
 class HarmonyAppMonitorPlugin(Star):
     def __init__(self, context: Context):
@@ -71,11 +71,22 @@ class HarmonyAppMonitorPlugin(Star):
                 html = await resp.text(encoding="utf-8")
                 soup = BeautifulSoup(html, "html.parser")
 
-                # 解析应用信息（适配鸿蒙应用商城页面结构）
-                app_name = soup.select_one("h1.app-name")?.text.strip() or "未知应用"
-                current_version = soup.select_one("div.version")?.text.strip() or "未知版本"
-                update_time = soup.select_one("span.update-date")?.text.strip() or "未知时间"
-                update_log = soup.select_one("div.update-content")?.text.strip() or "无更新内容"
+                # ========== 修正核心：替换所有?.为Python原生判空写法 ==========
+                # 解析应用名称
+                app_name_elem = soup.select_one("h1.app-name")
+                app_name = app_name_elem.text.strip() if app_name_elem else "未知应用"
+                
+                # 解析版本号
+                version_elem = soup.select_one("div.version")
+                current_version = version_elem.text.strip() if version_elem else "未知版本"
+                
+                # 解析更新时间
+                update_time_elem = soup.select_one("span.update-date")
+                update_time = update_time_elem.text.strip() if update_time_elem else "未知时间"
+                
+                # 解析更新日志
+                update_log_elem = soup.select_one("div.update-content")
+                update_log = update_log_elem.text.strip() if update_log_elem else "无更新内容"
 
                 logger.info(f"[鸿蒙应用监控插件] 抓取成功：{app_name} | {current_version}")
                 return {
