@@ -22,11 +22,12 @@ REQUEST_HEADERS = {
 class HarmonyAppMonitorPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
-        # 从Context读取插件配置（AstralBot面板配置的参数）
-        self.config = context.config
-        self.target_url = self.config.get("target_url", "")  # 应用URL
-        self.check_interval = self.config.get("check_interval", 10)  # 检查间隔（分钟）
-        self.history_version = self.config.get("history_version", "")  # 历史版本
+        # ========== 修正核心：用官方方法获取插件配置 ==========
+        # 获取插件配置（AstralBot官方API：get_config()，返回字典）
+        plugin_config = context.get_config() or {}
+        self.target_url = plugin_config.get("target_url", "")  # 应用URL
+        self.check_interval = plugin_config.get("check_interval", 10)  # 检查间隔（分钟）
+        self.history_version = plugin_config.get("history_version", "")  # 历史版本
         
         # 异步请求会话（适配异步插件）
         self.session: aiohttp.ClientSession | None = None
@@ -44,8 +45,11 @@ class HarmonyAppMonitorPlugin(Star):
             init_info = await self._get_app_info()
             if init_info:
                 self.history_version = init_info["version"]
-                # 保存配置到AstralBot面板
-                await self.context.update_config({"history_version": self.history_version})
+                # ========== 修正：用官方方法保存配置 ==========
+                # 获取当前配置 → 更新 → 保存
+                current_config = self.context.get_config() or {}
+                current_config["history_version"] = self.history_version
+                self.context.set_config(current_config)
                 logger.info(f"[鸿蒙应用监控插件] 初始化历史版本：{self.history_version}")
         
         # 启动定时检查任务（间隔：check_interval 分钟）
@@ -71,7 +75,6 @@ class HarmonyAppMonitorPlugin(Star):
                 html = await resp.text(encoding="utf-8")
                 soup = BeautifulSoup(html, "html.parser")
 
-                # ========== 修正核心：替换所有?.为Python原生判空写法 ==========
                 # 解析应用名称
                 app_name_elem = soup.select_one("h1.app-name")
                 app_name = app_name_elem.text.strip() if app_name_elem else "未知应用"
@@ -108,15 +111,23 @@ class HarmonyAppMonitorPlugin(Star):
 📝 更新内容：{info['log']}"""
         
         try:
-            # 通过Context的bot实例发送消息（AstralBot官方API）
-            # 适配多平台（企业微信/QQ/钉钉），默认推送到插件绑定的聊天对象
-            await self.context.bot.send_message(
+            # ========== 适配AstralBot官方消息发送API ==========
+            # 兼容不同版本的Context.bot.send_message（确保参数正确）
+            await self.context.bot.send_msg(
                 content=notice_msg,
-                message_type="text"
+                msg_type="text"
             )
             logger.info("[鸿蒙应用监控插件] 通知推送成功")
         except Exception as e:
-            logger.error(f"[鸿蒙应用监控插件] 推送失败：{str(e)}", exc_info=True)
+            # 兼容旧版API：若send_msg失败，尝试send_message
+            try:
+                await self.context.bot.send_message(
+                    content=notice_msg,
+                    message_type="text"
+                )
+                logger.info("[鸿蒙应用监控插件] 通知推送成功（兼容模式）")
+            except Exception as e2:
+                logger.error(f"[鸿蒙应用监控插件] 推送失败：{str(e2)}", exc_info=True)
 
     async def _scheduled_check(self):
         """定时检查更新的核心逻辑（异步循环）"""
@@ -137,7 +148,9 @@ class HarmonyAppMonitorPlugin(Star):
                 await self._send_notice(app_info)
                 # 更新历史版本并保存配置
                 self.history_version = app_info["version"]
-                await self.context.update_config({"history_version": self.history_version})
+                current_config = self.context.get_config() or {}
+                current_config["history_version"] = self.history_version
+                self.context.set_config(current_config)
             else:
                 logger.info("[鸿蒙应用监控插件] 无版本更新，跳过推送")
             
@@ -171,7 +184,9 @@ class HarmonyAppMonitorPlugin(Star):
             # 推送通知并更新历史版本
             await self._send_notice(app_info)
             self.history_version = app_info["version"]
-            await self.context.update_config({"history_version": self.history_version})
+            current_config = self.context.get_config() or {}
+            current_config["history_version"] = self.history_version
+            self.context.set_config(current_config)
         else:
             reply_msg = f"""✅ 暂无更新！
 📱 应用名称：{app_info['name']}
