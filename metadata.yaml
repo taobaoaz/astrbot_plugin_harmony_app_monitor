@@ -1,6 +1,51 @@
-name: astrbot_plugin_harmony_app_monitor # 插件唯一识别名，以 astrbot_plugin_ 前缀开头
-display_name: 鸿蒙应用更新监控 # 用于展示的名字
-desc: 手动检查鸿蒙应用商城版本更新（指令：/hmcheck） # 插件简短描述
-version: v1.0.0 # 插件版本号
-author: YourName # 作者
-repo: "" # 插件仓库地址（留空）
+name: harmony-update-notifier
+version: 1.0.0
+description: 鸿蒙应用更新实时推送插件
+author: YourName
+license: MIT
+
+# 依赖配置
+dependencies:
+  - flask>=2.0.0
+
+# 插件配置（用户可在AstrBot后台修改）
+config:
+  # Webhook服务器配置
+  webhook_host:
+    type: string
+    default: "0.0.0.0"
+    description: "Webhook服务器监听地址"
+  
+  webhook_port:
+    type: integer
+    default: 5000
+    description: "Webhook服务器端口"
+  
+  webhook_secret:
+    type: string
+    default: ""
+    description: "Webhook签名密钥（用于验证请求）"
+  
+  # 推送目标配置
+  target_group_id:
+    type: string
+    default: ""
+    description: "目标QQ群号（留空则推送到所有空间）"
+  
+  target_user_id:
+    type: string
+    default: ""
+    description: "目标用户QQ号（优先于群号）"
+
+# 插件事件
+events:
+  - type: message
+    handlers:
+      - on_message
+
+# 指令
+commands:
+  - name: harmony-check
+    description: 手动检查更新
+    handlers:
+      - on_check_command
