@@ -4,11 +4,18 @@ description: 监控华为应用市场鸿蒙应用更新并自动推送
 author: YourName
 license: MIT
 
+# 插件依赖的Python库，AstrBot会在加载插件时检查
+dependencies:
+  - playwright>=1.40.0
+  - beautifulsoup4>=4.12.0
+  - requests>=2.31.0
+  - apscheduler>=3.10.0
+  
 config:
   apps_to_watch:
     type: list
     default:
-      - app_name: "一记账单"
+      - app_name: "一日记账"
         detail_url: "https://appgallery.huawei.com/app/detail?id=com.ericple.onebill"
         version_selector: "span.content-value"
     description: |
