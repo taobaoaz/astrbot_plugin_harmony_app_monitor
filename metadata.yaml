@@ -1,17 +1,9 @@
-name: harmony-update-notifier
+name: harmony_app_monitor
 version: '1.0.0'
-description: 通过抓取华为应用市场页面，监控指定鸿蒙应用更新并推送通知的插件。
+description: 监控华为应用市场鸿蒙应用更新并自动推送
 author: YourName
 license: MIT
 
-# 插件依赖的Python库，AstrBot会在加载插件时检查
-dependencies:
-  - playwright>=1.40.0
-  - beautifulsoup4>=4.12.0
-  - requests>=2.31.0
-  - apscheduler>=3.10.0
-
-# 用户可配置项 (重点部分)
 config:
   apps_to_watch:
     type: list
@@ -19,18 +11,18 @@ config:
       - app_name: "一记账单"
         detail_url: "https://appgallery.huawei.com/app/detail?id=com.ericple.onebill"
         version_selector: "span.content-value"
-        # selector_type: "css" # 默认为CSS选择器，可省略
     description: |
-      需要监控的应用列表。请严格按照YAML格式添加：
-        - app_name: “应用名称”
-          detail_url: “华为应用市场详情页完整链接”
-          version_selector: “用于定位版本号的CSS选择器”
+      需要监控的应用列表，格式：
+      - app_name: "应用显示名"
+        detail_url: "应用市场详情页URL"
+        version_selector: "CSS选择器"
 
   check_interval_minutes:
     type: integer
     default: 30
-    description: 定时检查更新的时间间隔（分钟）。为避免被封禁，建议不低于30分钟。
+    min: 5
+    max: 1440
+    description: 检查更新的时间间隔（分钟）
 
-# 插件事件与命令（可按需扩展）
 events: []
 commands: []
