@@ -1,12 +1,6 @@
-# 插件唯一识别名（官方要求以 astrbot_plugin_ 前缀开头）
-name: astrbot_plugin_harmony_app_monitor
-# 面板展示名称（人类可读）
-display_name: 鸿蒙应用更新监控
-# 插件简短描述
-desc: 监控鸿蒙应用商城指定应用版本更新，支持自动推送+手动触发（指令：/hmcheck）
-# 版本号（严格遵循 vX.X.X 格式）
-version: v1.0.0
-# 作者名（替换为你的名称）
-author: xianyao
-# 插件仓库地址（无则留空，或填写你的仓库链接）
-repo: https://github.com/taobaoaz/astrbot_plugin_harmony_app_monitor
+name: astrbot_plugin_harmony_app_monitor # 插件唯一识别名，以 astrbot_plugin_ 前缀开头
+display_name: 鸿蒙应用更新监控 # 用于展示的名字
+desc: 手动检查鸿蒙应用商城版本更新（指令：/hmcheck） # 插件简短描述
+version: v1.0.0 # 插件版本号
+author: YourName # 作者
+repo: "" # 插件仓库地址（留空）
