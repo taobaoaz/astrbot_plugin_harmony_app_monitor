@@ -1,135 +1,254 @@
-# 鸿蒙应用更新监控插件 (Harmony App Monitor)
+# 鸿蒙应用更新监控与推送插件
 
-## 插件概述
+一个用于监控华为鸿蒙应用市场（AppGallery）应用版本更新的AstrBot插件，自动检测应用更新并推送通知。
 
-本插件用于自动化监控华为应用市场（AppGallery）中鸿蒙（HarmonyOS）应用的版本更新。当监控的应用发布新版本时，插件可自动记录并推送通知，帮助您及时获取应用更新信息。
+## 🎯 功能特性
 
-**核心功能**：自动抓取指定应用的当前版本号，与本地记录比对，发现更新后触发通知。
+- 🔍 **自动监控**：定时检查鸿蒙应用市场中的应用版本更新
+- 📱 **多应用支持**：同时监控多个应用，支持自定义应用列表
+- 🔔 **智能通知**：支持群组和用户通知，发现更新时自动推送
+- ⚙️ **灵活配置**：通过Web界面轻松配置所有参数
+- 🛠️ **便捷管理**：提供丰富的指令进行状态查看和管理
+- 📊 **数据持久化**：记录版本信息，避免重复通知
 
-## 主要特性
+## 📦 安装要求
 
--   **多应用监控**：可同时监控多个鸿蒙应用。
--   **灵活配置**：支持通过Web界面或机器人指令动态管理监控列表（应用名称、详情页URL、版本CSS选择器）。
--   **双模式检查**：
-    -   **定时自动检查**：在后台按设定间隔自动检查更新。
-    -   **手动立即检查**：通过 `/check` 指令立即触发一次检查并返回最新结果。
--   **数据持久化**：独立存储每个应用的版本记录，重启后不丢失。
--   **指令管理**：提供完整的指令集，方便查看状态、管理配置、清空记录等。
+### 环境要求
+- Python 3.8+
+- AstrBot 3.5.10+
+- Playwright（自动安装）
 
-## 安装与启用
+### 安装步骤
 
-### 1. 安装依赖
-插件需要 `playwright` 来抓取网页内容。请确保在AstrBot环境下安装：
+1. **安装插件**
+   ```bash
+   # 将插件目录放入AstrBot的plugins目录
+   cp -r harmony_app_monitor /path/to/astrbot/plugins/
+   ```
+
+2. **安装依赖**
+   ```bash
+   # 进入插件目录
+   cd /path/to/astrbot/plugins/harmony_app_monitor
+   
+   # 安装Python依赖
+   pip install playwright
+   
+   # 安装浏览器
+   playwright install chromium
+   ```
+
+3. **重启AstrBot**
+   ```bash
+   systemctl restart astrbot  # 或使用您的启动方式
+   ```
+
+## ⚙️ 配置说明
+
+### Web界面配置
+在AstrBot管理面板中配置以下参数：
+
+| 配置项 | 类型 | 说明 | 默认值 |
+|--------|------|------|--------|
+| 应用名称列表 | text | 每行一个应用名称 | 一日记账 |
+| 应用详情页链接列表 | text | 每行一个应用详情页链接 | 示例链接 |
+| 版本选择器列表 | text | 每行一个CSS选择器 | span.content-value |
+| 检查间隔（分钟） | int | 自动检查的时间间隔 | 30 |
+| 指令前缀 | string | 插件指令的前缀字符 | / |
+| 推送通知的群组 | text | 每行一个群组ID | 空 |
+| 推送通知的用户 | text | 每行一个用户ID | 空 |
+| 启用调试日志 | bool | 是否启用详细调试日志 | false |
+
+### 配置示例
+```
+应用名称列表：
+一日记账
+华为视频
+
+应用详情页链接列表：
+https://appgallery.huawei.com/app/detail?id=com.ericple.onebill
+https://appgallery.huawei.com/app/detail?id=com.huawei.himovie
+
+版本选择器列表：
+span.content-value
+span.version-info
+
+推送通知的群组：
+123456789
+987654321
+```
+
+## 📖 使用方法
+
+### 基础指令
+
+| 指令 | 功能 | 示例 |
+|------|------|------|
+| `/status` | 查看插件状态 | `/status` |
+| `/check` | 立即检查更新 | `/check` |
+| `/list` | 列出监控应用 | `/list` |
+| `/notify` | 查看通知配置 | `/notify` |
+| `/refresh` | 刷新配置 | `/refresh` |
+| `/help` | 显示帮助 | `/help` |
+
+### 通知管理指令
+
+| 指令 | 功能 | 示例 |
+|------|------|------|
+| `/add_notify <类型> <ID>` | 添加通知目标 | `/add_notify group 123456789` |
+| `/del_notify <类型> <ID>` | 删除通知目标 | `/del_notify user 987654321` |
+
+### 使用示例
+
+1. **查看状态**
+   ```
+   /status
+   
+   输出：
+   📊 鸿蒙监控状态
+   • 监控应用: 3个
+   • 检查间隔: 30分钟
+   • 运行状态: ✅ 运行中
+   • Playwright: ✅ 可用
+   • 通知群组: 2个
+   • 通知用户: 1个
+   • 版本记录: 3个
+   • 调试模式: ❌ 关闭
+   ```
+
+2. **立即检查更新**
+   ```
+   /check
+   
+   输出：
+   🔍 正在检查所有应用更新，请稍候...
+   ✅ 检查完成！耗时: 12.5秒
+   
+   📋 当前版本信息:
+     • 一日记账: v2.3.1
+     • 华为视频: v11.0.5
+     • 华为音乐: v9.1.2
+   ```
+
+3. **添加通知群组**
+   ```
+   /add_notify group 123456789
+   
+   输出：
+   ✅ 已添加通知群组: 123456789
+   ```
+
+## 🔧 故障排除
+
+### 常见问题
+
+1. **插件无法启动**
+   - 检查Playwright是否安装正确：`playwright --version`
+   - 查看AstrBot日志，确认错误信息
+   - 检查配置格式是否正确
+
+2. **无法获取版本信息**
+   - 检查网络连接是否正常
+   - 确认应用链接是否有效
+   - 检查CSS选择器是否正确
+   - 查看调试日志：启用`enable_debug_log`配置项
+
+3. **通知发送失败**
+   - 检查群组/用户ID是否正确
+   - 确认机器人有发送消息的权限
+   - 查看AstrBot的消息发送日志
+
+### 日志查看
+
 ```bash
-# 进入AstrBot目录
-cd /root/AstrBot
+# 查看AstrBot日志
+journalctl -u astrbot -f
 
-# 安装playwright Python包
-pip install playwright
-
-# 安装playwright浏览器（Chromium）
-playwright install chromium
+# 或查看日志文件
+tail -f /var/log/astrbot/astrbot.log
 ```
 
-### 2. 放置插件
-确保插件文件夹 `astrbot_plugin_harmony_app_monitor` 已放置在AstrBot的插件目录下：
+### 调试模式
+在Web界面中启用`启用调试日志`配置项，插件将输出详细的调试信息。
+
+## 🚀 高级功能
+
+### 自定义CSS选择器
+不同的应用页面可能使用不同的CSS选择器来显示版本号。您可以通过以下方式获取正确的选择器：
+
+1. 打开浏览器开发者工具（F12）
+2. 使用元素选择器定位版本号
+3. 复制版本号元素的CSS选择器
+
+常见的选择器：
+- `span.content-value`
+- `div.version-text`
+- `span.version-info`
+- `p.version-number`
+
+### 添加新应用
+1. 在Web界面配置中添加应用名称、链接和选择器
+2. 确保三者的行数对应
+3. 保存配置后使用`/refresh`指令刷新
+4. 使用`/check`指令测试获取版本
+
+### 批量导入配置
+您可以将配置导出为JSON格式，便于批量管理：
+
+1. 在配置文件中直接编辑
+2. 或通过`/export`指令导出配置模板
+3. 修改后重新导入
+
+## 📁 文件结构
+
 ```
-/root/AstrBot/data/plugins/astrbot_plugin_harmony_app_monitor/
-├── main.py
-├── config.json (可选，初次运行或保存配置后生成)
-├── harmony_versions.json (存放版本记录，自动生成)
-└── _conf_schema.json (配置模式定义)
+harmony_app_monitor/
+├── main.py              # 插件主程序
+├── _conf_schema.json    # 配置定义文件
+├── README.md           # 本说明文件
+├── harmony_versions.json # 版本记录（自动生成）
+└── user_config.json    # 用户配置（自动生成）
 ```
 
-### 3. 重启AstrBot
-重启AstrBot以加载插件：
-```bash
-pkill -f astrbot
-python main.py
-```
+## 🔄 更新日志
 
-## 配置说明
+### v1.0.0 (2024-01-01)
+- ✅ 首次发布
+- ✅ 基础监控功能
+- ✅ 多应用支持
+- ✅ Web界面配置
+- ✅ 通知系统
+- ✅ 指令管理
 
-### 方式一：通过AstrBot Web界面配置（推荐）
-1.  访问AstrBot管理面板（通常是 `http://你的服务器IP:6185`）。
-2.  使用默认凭据登录（用户名：`astrbot`，密码：`99c78b74f65abbbeca03ab5e89621024`，请根据你的实际配置调整）。
-3.  找到 **插件管理** 或 **插件配置**。
-4.  定位到 **`harmony_app_monitor`** （鸿蒙应用更新监控与推送插件）。
-5.  在表单中配置以下项（与 `_conf_schema.json` 定义对应）：
-    -   **软件名称列表**：每行一个应用名，例如 `一记账单`。
-    -   **软件网页列表**：每行一个对应的华为应用市场详情页URL，顺序必须与名称列表一致。
-    -   **版本选择器列表**：每行一个用于定位版本号的CSS选择器，顺序必须与名称列表一致，例如 `span.content-value`。
-    -   **检查间隔（分钟）**：自动检查的间隔时间，建议不低于30。
-    -   **指令前缀**：触发指令的前缀符号，默认为 `/`。
-6.  保存配置并重启插件或整个AstrBot。
+## 📄 许可证
 
-### 方式二：通过机器人指令动态管理
-插件加载后，可通过以下指令直接管理，配置**会实时生效但需手动保存**到文件（使用 `/save_config`）。
+本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
 
-## 使用指南 (机器人指令)
+## 🤝 贡献指南
 
-使用前，请确保你知道机器人的**指令前缀**（默认为 `/`）。以下示例均使用默认前缀。
+欢迎提交Issue和Pull Request！
 
-### 查看信息与状态
--   **`/status`**：查看插件运行状态、监控应用数量、检查间隔等。
--   **`/config`**：查看当前详细的监控配置和应用列表。
+1. Fork 本仓库
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
 
-### 核心检查功能
--   **`/check`**：
-    -   **优化后逻辑**：指令触发后，插件会**立即开始检查**所有监控应用，并更新版本记录。检查完成后，**直接显示本次检查得到的最新版本状态**。
-    -   输出内容为本次检查后所有应用的最新版本号。
+## 💬 支持与反馈
 
-### 应用列表管理
--   **`/add_app “<应用名称>” <URL> <CSS选择器>`**
-    -   添加一个应用到监控列表。应用名称若包含空格，需用英文引号包围。
-    -   **示例**：`/add_app “一记账单” https://appgallery.huawei.com/app/detail?id=com.ericple.onebill span.content-value`
--   **`/del_app <名称或编号>`**
-    -   从监控列表中删除一个应用。可通过`/config`查看应用对应的编号。
-    -   **示例**：`/del_app 一记账单` 或 `/del_app 1`
+如果您遇到问题或有建议：
 
-### 插件设置管理
--   **`/set_interval <分钟数>`**：修改自动检查的时间间隔（分钟）。**注意**：修改后会重启监控任务。
-    -   **示例**：`/set_interval 60`
--   **`/set_prefix <新前缀>`**：修改触发指令所需的前缀符号。
-    -   **示例**：`/set_prefix !` （此后指令将变为 `!status`, `!check` 等）
+1. 查看 [GitHub Issues](https://github.com/your-repo/issues)
+2. 提交新的Issue
+3. 或通过邮件联系我们
 
-### 数据与配置维护
--   **`/save_config`**：将当前通过指令修改的所有配置（应用列表、检查间隔、前缀）保存到插件的 `config.json` 文件。**重要**：通过指令进行的修改，必须执行此命令才会持久化。
--   **`/reload_config`**：让插件重新从 `config.json` 文件加载配置，并重启监控任务。
--   **`/clear_records`**：清空所有已记录的应用版本历史（`harmony_versions.json` 文件）。下次检查将被视作首次记录。
--   **`/export_config`**：以JSON格式在聊天中显示当前的完整配置，可用于备份或迁移。
--   **`/reset_config confirm`**：**危险操作**。将插件配置重置为默认值（一个默认应用），并清空所有版本记录。必须在命令后加上 `confirm` 以确认。
+## 🙏 致谢
 
-## 故障排除 (常见错误)
-
-### 1. 插件载入失败：`ModuleNotFoundError` 或 `AttributeError`
--   **原因**：代码存在语法错误、缩进错误或缺失方法。
--   **解决**：根据控制台错误日志定位行号，检查代码。确保所有提到的类方法（如 `_load_version_store`, `_monitor_loop` 等）都已正确定义在类中。
-
-### 2. 插件载入失败：`cannot import name ... (most likely due to a circular import)`
--   **原因**：其他插件（如日志中提到的 `astrbot_plugin_click2download`）存在Python文件循环导入问题。
--   **解决**：此错误与当前插件无关。需要检查并修复出问题插件的代码结构，通常需要将模块顶部的导入语句移到函数内部，或重构代码打破循环依赖。
-
-### 3. 抓取失败：`Page.goto: Timeout XXXXms exceeded.`
--   **原因**：访问华为应用市场页面超时。
--   **解决**：
-    1.  **修改等待策略**：编辑 `_fetch_version` 方法，将 `wait_until=”networkidle”` 参数改为 `”domcontentloaded”` 或 `”load”`。这是最常见有效的方案。
-    2.  **增加超时时间**：将 `page.goto` 的 `timeout` 参数值增大（例如从15000改为30000）。
-    3.  **检查网络**：确认服务器网络可以正常访问华为应用市场。
-
-### 4. 检查完成但未记录版本
--   **原因**：CSS选择器未能定位到元素，或网页结构已更改。
--   **解决**：
-    1.  在浏览器中手动打开配置的URL。
-    2.  按F12打开开发者工具，使用 `Ctrl+F` 在Elements面板中搜索你配置的CSS选择器（如 `span.content-value`），看是否能匹配到版本号文本。
-    3.  若匹配失败，需更新为正确的CSS选择器。
-
-## 使用提示
-
--   **选择器获取**：在浏览器开发者工具中，右键点击版本号元素，选择 “Copy” -> “Copy selector”，可快速获取CSS选择器。
--   **首次运行**：一个新应用第一次被检查到时，其版本号会被记录为“基线版本”，后续检查将与此基线进行对比。
--   **日志查看**：插件的运行日志通常可以在AstrBot的主日志中或插件目录下的日志文件中找到，关键字为 `[鸿蒙监控]`。
+感谢以下项目：
+- [AstrBot](https://github.com/Soulter/AstrBot) - 优秀的机器人框架
+- [Playwright](https://playwright.dev/) - 强大的浏览器自动化工具
+- 所有贡献者和用户
 
 ---
-**插件作者**：xianyao  
-**版本**：1.0.0  
+
+**Happy Monitoring!** 🎉

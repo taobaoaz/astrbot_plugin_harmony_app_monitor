@@ -1,32 +1,52 @@
 {
-    "app_name_list": {
-        "description": "软件名称列表（每行一个）",
-        "type": "list",
-        "hint": "请在此输入要监控的软件名称，每行一个。顺序必须与下面的‘软件网页列表’和‘版本选择器列表’完全对应。",
-        "default": ["一记账单"]
-    },
-    "detail_url_list": {
-        "description": "软件网页列表（每行一个）",
-        "type": "list",
-        "hint": "请在此输入对应软件的华为应用市场详情页链接，每行一个。顺序必须与上面的‘软件名称列表’一致。",
-        "default": ["https://appgallery.huawei.com/app/detail?id=com.ericple.onebill"]
-    },
-    "version_selector_list": {
-        "description": "版本选择器列表（每行一个）",
-        "type": "list",
-        "hint": "请在此输入对应软件版本号的CSS选择器，每行一个。顺序必须与上面的‘软件名称列表’一致。例如：span.content-value",
-        "default": ["span.content-value"]
-    },
-    "check_interval_minutes": {
-        "description": "检查间隔（分钟）",
-        "type": "int",
-        "hint": "定时检查更新的时间间隔（分钟）。为避免对应用市场服务器造成压力或触发反爬机制，建议不低于30分钟。",
-        "default": 30
-    },
-    "command_prefix": {
-        "description": "指令前缀",
-        "type": "string",
-        "hint": "触发本插件指令所需的前缀符号，例如 '/' 表示使用 /check 指令。",
-        "default": "/"
-    }
+  "app_name_list": {
+    "description": "应用名称列表",
+    "type": "text",
+    "hint": "每行一个应用名称，顺序要与链接列表、选择器列表保持一致",
+    "default": "一日记账\n华为视频\n华为音乐"
+  },
+  "detail_url_list": {
+    "description": "应用详情页链接列表",
+    "type": "text",
+    "hint": "每行一个华为应用市场的应用详情页链接",
+    "default": "https://appgallery.huawei.com/app/detail?id=com.ericple.onebill\nhttps://appgallery.huawei.com/app/detail?id=com.huawei.himovie\nhttps://appgallery.huawei.com/app/detail?id=com.huawei.himusic"
+  },
+  "version_selector_list": {
+    "description": "版本选择器列表",
+    "type": "text",
+    "hint": "每行一个CSS选择器,用于定位版本号元素",
+    "default": "span.content-value\nspan.version-info\ndiv.version-text"
+  },
+  "check_interval_minutes": {
+    "description": "检查间隔（分钟）",
+    "type": "int",
+    "hint": "自动检查应用更新的时间间隔（分钟）",
+    "default": 30,
+    "min": 5,
+    "max": 1440
+  },
+  "command_prefix": {
+    "description": "指令前缀",
+    "type": "string",
+    "hint": "插件指令的前缀字符",
+    "default": "/"
+  },
+  "notification_groups": {
+    "description": "推送通知的群组",
+    "type": "text",
+    "hint": "每行一个群组ID,将向这些群组发送更新通知",
+    "default": ""
+  },
+  "notification_users": {
+    "description": "推送通知的用户",
+    "type": "text",
+    "hint": "每行一个用户ID,将向这些用户发送更新通知",
+    "default": ""
+  },
+  "enable_debug_log": {
+    "description": "启用调试日志",
+    "type": "bool",
+    "hint": "是否启用详细的调试日志输出",
+    "default": false
+  }
 }
