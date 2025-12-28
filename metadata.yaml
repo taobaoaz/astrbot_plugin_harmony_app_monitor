@@ -1,28 +1,11 @@
-name: harmony_app_monitor
-version: '1.0.0'
-description: 监控华为应用市场鸿蒙应用更新并自动推送通知
-author: YourName
-license: MIT
-
-config:
-  apps_to_watch:
-    type: list
-    default:
-      - app_name: "一记账单"
-        detail_url: "https://appgallery.huawei.com/app/detail?id=com.ericple.onebill"
-        version_selector: "span.content-value"
-    description: |
-      需要监控的应用列表，格式：
-      - app_name: "应用显示名"
-        detail_url: "应用市场详情页URL"
-        version_selector: "CSS选择器（用于定位版本号）"
-
-  check_interval_minutes:
-    type: integer
-    default: 30
-    min: 5
-    max: 1440
-    description: 检查更新的时间间隔（分钟）。为避免被封禁，建议不低于30分钟。
-
-events: []
-commands: []
+name: astrbot_plugin_harmony_app_monitor
+desc: 监控华为应用市场鸿蒙应用更新并自动推送通知。
+display_name: 鸿蒙应用更新监控
+help: |
+  自动抓取指定鸿蒙应用在华为应用市场的版本号，发现更新时自动推送通知。
+  命令：
+  /check - 手动立即检查所有应用更新
+  /status - 查看插件运行状态
+version: 1.0.0
+author: xianyao
+# config: 部分可以完全删除

@@ -1,0 +1,32 @@
+{
+    "app_name_list": {
+        "description": "软件名称列表（每行一个）",
+        "type": "list",
+        "hint": "请在此输入要监控的软件名称，每行一个。顺序必须与下面的‘软件网页列表’和‘版本选择器列表’完全对应。",
+        "default": ["一记账单"]
+    },
+    "detail_url_list": {
+        "description": "软件网页列表（每行一个）",
+        "type": "list",
+        "hint": "请在此输入对应软件的华为应用市场详情页链接，每行一个。顺序必须与上面的‘软件名称列表’一致。",
+        "default": ["https://appgallery.huawei.com/app/detail?id=com.ericple.onebill"]
+    },
+    "version_selector_list": {
+        "description": "版本选择器列表（每行一个）",
+        "type": "list",
+        "hint": "请在此输入对应软件版本号的CSS选择器，每行一个。顺序必须与上面的‘软件名称列表’一致。例如：span.content-value",
+        "default": ["span.content-value"]
+    },
+    "check_interval_minutes": {
+        "description": "检查间隔（分钟）",
+        "type": "int",
+        "hint": "定时检查更新的时间间隔（分钟）。为避免对应用市场服务器造成压力或触发反爬机制，建议不低于30分钟。",
+        "default": 30
+    },
+    "command_prefix": {
+        "description": "指令前缀",
+        "type": "string",
+        "hint": "触发本插件指令所需的前缀符号，例如 '/' 表示使用 /check 指令。",
+        "default": "/"
+    }
+}

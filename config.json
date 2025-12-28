@@ -1,0 +1,16 @@
+{
+  "app_name_list": [
+    "一日记账",
+    "便单"
+  ],
+  "detail_url_list": [
+    "https://appgallery.huawei.com/app/detail?id=com.ericple.onebill",
+    "https://appgallery.huawei.com/app/detail?id=cn.biandangroup.biandan&channelId=SHARE&source=appshare"
+  ],
+  "version_selector_list": [
+    "span.content-value",
+    "span.content-value"
+  ],
+  "check_interval_minutes": 30,
+  "command_prefix": "/"
+}
