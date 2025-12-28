@@ -1,11 +1,6 @@
-name: astrbot_plugin_harmony_app_monitor
-desc: 监控华为应用市场鸿蒙应用更新并自动推送通知。
-display_name: 鸿蒙应用更新监控
-help: |
-  自动抓取指定鸿蒙应用在华为应用市场的版本号，发现更新时自动推送通知。
-  命令：
-  /check - 手动立即检查所有应用更新
-  /status - 查看插件运行状态
-version: 1.0.0
-author: xianyao
-# config: 部分可以完全删除
+name: astrbot_plugin_harmony_app_monitor # 插件唯一识别名
+display_name: 鸿蒙应用更新监控 # 用于展示的名字
+desc: 监控华为应用市场鸿蒙应用更新并自动推送通知。 # 插件简短描述
+version: 1.0.0 # 插件版本号（保持 v1.1.1 或 v1.1 格式，或纯数字）
+author: xianyao # 作者
+repo: https://github.com/taobaoaz/astrbot_plugin_harmony_app_monitor # 插件的公开GitHub仓库地址
